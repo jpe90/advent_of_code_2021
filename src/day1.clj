@@ -3,23 +3,17 @@
             [clojure.string :as cstr]))
 
 (def input (data/input 2021 1))
+(def numeric-input (->> input (cstr/split-lines) (map #(Integer/parseInt %))))
 
-(def part-1
-  (->> input
-       (cstr/split-lines)
-       (map #(Integer/parseInt %))
+(defn part-1 [in]
+  (->> in
        (partition 2 1)
        (filter #(< (first %) (second %)))
        count))
 
-(def part-2
-  (->> input
-       (cstr/split-lines)
-       (map #(Integer/parseInt %))
+(defn part-2 [in]
+  (->> in
        (partition 3 1)
        (map #(reduce + %))
-       (partition 2 1)
-       (filter #(< (first %) (second %)))
-       count))
-
+       (part-1)))
 
