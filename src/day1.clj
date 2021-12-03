@@ -2,8 +2,7 @@
   (:require [aocd.core :as data]
             [clojure.string :as cstr]))
 
-(def input (data/input 2021 1))
-(def numeric-input (->> input (cstr/split-lines) (map #(Integer/parseInt %))))
+(def input (->> (data/input 2021 1) (cstr/split-lines) (map #(Integer/parseInt %))))
 
 (defn part-1 [in]
   (->> in
@@ -17,3 +16,6 @@
        (map #(reduce + %))
        (part-1)))
 
+(comment
+  (part-1 input)
+  (part-2 input))
