@@ -1,117 +1,53 @@
 (ns day5
   (:require [aocd.core :as data]
             [clojure.string :as str]
-            [clojure.set :as s :refer [union]]))
+            [clojure.set :refer [intersection union]]
+            [clojure.math.numeric-tower :refer [abs]]))
 
 (def input (data/input 2021 5))
-(def test-input (slurp "src/day5s.txt"))
-
-(defn parse-int [s] (Integer/parseInt s)) ;;https://stackoverflow.com/a/6197026/5067724
+(defn horizontal? [line] (= (:y1 line) (:y2 line)))
+(defn vertical? [line] (= (:x1 line) (:x2 line)))
 (defn parse-pair [string] (-> string str/trim (str/split #",") (->> (map #(Integer/parseInt %)))))
-(defn extract-pairs [[m1 m2]] (let [p1 (parse-pair m1)
+(defn pairs->line [[m1 m2]] (let [p1 (parse-pair m1)
                                     p2 (parse-pair m2)]
-                                {:xmin (min (first p1) (first p2)) :xmax (max (first p1) (first p2))
-                                 :ymin (min (second p1) (second p2)) :ymax (max (second p1) (second p2))}))
-(defn update-map [m f]
-  (reduce-kv (fn [m k v] 
-               (assoc m k (f v))) {} m))
-
-
-(defn maps [input] (->> input str/split-lines (map #(str/split % #"->")) (map extract-pairs) ))
-(defn horizontal? [line] (= (:ymin line) (:ymax line)))
-(defn vertical? [line] (= (:xmin line) (:xmax line)))
-(defn horizontal->set [line] (for [x (range (:xmin line) (+ 1 (:xmax line)))]
-                               {:x x :y (:ymin line)}))
-(defn vertical->set [line] (for [y (range (:ymin line) (+ 1 (:ymax line)))]
-                             {:x (:xmin line) :y y}))
-(defn line->set [line] (cond
-                                     (horizontal? line) (horizontal->set line)
-                                     (vertical? line) (vertical->set line)))
-
-(def vertical-or-horizontal (filter #(or (horizontal? %) (vertical? %)) maps))
-;; horizontal intersects if its y is between
-(defn overlap-for [{:keys [max1 min1 max2 min2]}]
-  ()
-  )
-(defn intersection-for [vertical horizontal]
-  (let [vertx (:xmin vertical)
-        hory (:ymin horizontal)] (when
-                                     (and
-                                      (<= (:xmin horizontal) vertx (:xmax horizontal))
-                                      (<= (:ymin vertical) hory (:ymax vertical)))
-                                   (hash-map :x vertx :y hory))))
-(defn intersections-for-line [line set]
-  (let [potential-intersections (->> set
-                                     (filter #(not= line %))
-                                     (filter #(if (horizontal? line) (vertical? %) (horizontal? %))))
-        check-intersection (if (vertical? line) #(intersection-for line %) #(intersection-for % line))
-        ]
-    (->> potential-intersections (map check-intersection) (filter some?) first)
-    ))
+                                {:x1 (first p1) :y1 (second p1) :x2 (first p2) :y2 (second p2)}))
+(defn parse-lines [input] (->> input str/split-lines (map #(str/split % #"->")) (map pairs->line)))
+(defn line->points [line]
+  (let [xd (- (:x2 line) (:x1 line))
+        yd (- (:y2 line) (:y1 line))
+        maxd (max (abs xd) (abs yd))
+        dx (/ xd maxd)
+        dy (/ yd maxd)]
+    (for [step (range (inc maxd))]
+      {:x (+ (:x1 line) (* step dx)) :y (+ (:y1 line) (* step dy))})))
 
 (defn intersections-for-line [line st]
   (let [potential-intersections (->> st
                                      (filter #(not= line %)))
-        sets (->> potential-intersections (map line->set) (filter some?) (map set))
-        line-pts (->> line line->set set)
-        overlapping (fn [ln] (s/intersection ln line-pts))
+        sets (->> potential-intersections (map line->points) (filter some?) (map set))
+        line-pts (->> line line->points set)
+        overlapping (fn [ln] (intersection ln line-pts))
         ]
-    (->> sets (map overlapping) (filter not-empty))
-    ;; #break sets
-    ))
+    (->> sets (map overlapping) (filter not-empty))))
 
-(intersections-for-line firstline testlines)
+(defn count-intersections [lines]
+  (->> lines
+       (map #(intersections-for-line % lines))
+       (filter not-empty)
+       flatten
+       (apply union)
+       count
+       ))
 
-(count (let [maps (->> input maps)]
-   (->> maps
-        (map #(intersections-for-line % maps))
-        (filter not-empty)
-        flatten
-        (apply union)
-        )))
+(defn vertical-horizontal-intersections [input]
+  (let [lines (->> input parse-lines (filter #(or (horizontal? %) (vertical? %))))]
+    (count-intersections lines)))
 
-(def horizontal-vertical-sets (let [maps (->> test-input
-                 maps)
-       ]
-   (->> maps
-        (map line->set)
-        (filter some?)
-        (map set)
-        )))
+(defn all-intersections [input]
+  (let [lines (->> input parse-lines)]
+           (count-intersections lines)))
 
-
-
-
-
-(def testlines (let [maps (->> test-input
-                               maps)
-                     ]
-                 (->> maps
-
-                      )))
-
-(def firstline (first (let [maps (->> test-input
-                                      maps)
-                            ]
-                        (->> maps
-
-                             ))))
-
-
-(def testvert (filter vertical? (let [maps (->> test-input
-                                                maps)]
-                                  (->> maps
-                                       ))))
-
-
-
-
-
-
-
-
-
-
-
-;; parse - 2d representation
-;; at least 2 overlap
+;;part 1
+(vertical-horizontal-intersections input)
+;;part 2
+(all-intersections input)
