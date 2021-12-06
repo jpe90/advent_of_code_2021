@@ -12,6 +12,7 @@
                                                (filter not-empty)
                                                (partition 5)
                                                (map extract-board))})
+
 (defn run [in] (->> in (str/split-lines) parse-input))
 
 (defn horizontals [board]
@@ -26,7 +27,7 @@
 (defn contains-elem? [item coll] (not= (.indexOf coll item) -1))
 (defn contains-coll [little big] (every? #(contains-elem? % little) big))
 
-(defn check-winx [board called]
+(defn check-win [board called]
   (let [to-check (->> (concat (horizontals board) (verticals board)))
         winners (filter #(contains-coll called %) to-check)]
     (if (not-empty winners)
@@ -35,29 +36,37 @@
   )
 
 (defn win-state [board numbers] (loop [x 1]
-                 (let [drawn-numbers (take x numbers)
-                       win-state-reached? (some? (check-winx board drawn-numbers))]
-                   (if win-state-reached?
-                     {:drawn drawn-numbers :winning-board board}
-                     (recur (inc x))))))
+                                  (let [drawn-numbers (take x numbers)
+                                        win-state-reached? (some? (check-win board drawn-numbers))]
+                                    (if win-state-reached?
+                                      {:drawn drawn-numbers :winning-board board}
+                                      (recur (inc x))))))
 
-(defn loser [boards numbers] (last (sort-by :lendrawn (map #(win-state (list %) numbers) boards))))
-(defn loservals [boards] (first (:winning-board (loser boards))))
-(defn loserdrawn [boards] (:drawn (loser boards)))
-(defn last-winning-board [boards]
+
+(defn ordered-win-states [boards numbers]
   (->> boards
        (map #(win-state % numbers))
-       (sort-by #(count (:drawn %)))
+       (sort-by #(count (:drawn %)))))
 
-(let [run-info (run input)
-      boards (:game-boards run-info)
-      numbers (:drawn-numbers run-info)]
-  (comment (*
-            (Integer/parseInt (last (:drawn (loser boards))))
-            (apply +
-                   (map #(Integer/parseInt %)
-                        (filter
-                         #(not (contains-elem? % (loserdrawn boards)))
-                         (loservals boards))))))
-  )))
+(defn select-win-state [f]
+  (let [run (run input)
+        boards (:game-boards run)
+        numbers (:drawn-numbers run)
+        last-win-state (f (ordered-win-states boards numbers))
+        last-winning-board (map #(Integer/parseInt %)(:winning-board last-win-state))
+        called-numbers (map #(Integer/parseInt %) (:drawn last-win-state))
+        last-number-called (last called-numbers)
+        uncalled-numbers (filter #(not (contains-elem? % called-numbers)) last-winning-board)
+        sum-uncalled (apply + uncalled-numbers)]
+    (* sum-uncalled last-number-called)))
+
+;; part 1
+(select-win-state first)
+;; part 2
+(select-win-state last)
+
+
+
+
+
 
