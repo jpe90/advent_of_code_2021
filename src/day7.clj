@@ -5,82 +5,40 @@
 
 (def input (data/input 2021 7))
 
-(def test-input (slurp "src/7.txt"))
-
-
 (defn parse-input [input]
   (as-> input i
-    (str/trim i)
-    (str/split i #",")
-    (map #(Integer/parseInt %) i)
-    ))
+        (str/trim i)
+        (str/split i #",")
+        (map #(Integer/parseInt %) i)))
 
 (defn distance-from [alignment]
   (fn [potential-position]
     (abs (- alignment potential-position))))
-(defn input-range-for [input]
-  (range (apply min input) (apply max input)))
 
-
-(def parsed-test-input (parse-input test-input))
 (def parsed-input (parse-input input))
 
-(apply + (take 4 (iterate inc 1)))
-((distance-from 5) 1)
+(defn input-range-for [input]
+  (range (apply min input) (apply max input)))
 
 (defn calculate-fuel [distance]
   (apply + (take distance (iterate inc 1))))
 
-
-
-(defn sum-of-distances [number]
-  (->> parsed-input
+(defn sum-of-distances [number in]
+  (->> in
        (map (distance-from number))
-       (apply +)
-       ))
+       (apply +)))
 
-(defn sum-of-distances-2 [number]
-  (->> parsed-input
+(defn sum-of-distances-2 [number in]
+  (->> in
        (map (distance-from number))
        (map calculate-fuel)
-       (apply +)
-       ))
+       (apply +)))
 
-(sum-of-distances-2 5)
-(map #(sum-of-distances-2 %) parsed-test-input)
-
-(defn part2 [input]
-  (as-> input i
-    (map #(sum-of-distances-2 %) i)
-    (apply min i)
-    ))
-
-(part2 parsed-test-input)
-
-(defn part1 [input]
-  (as-> input i
-    (map #(sum-of-distances %) i)
-    (apply min i)
-    ))
-
-(defn part2 [input]
+(defn solve [f input]
   (as-> (input-range-for input) i
-    (map #(sum-of-distances-2 %) i)
-    (apply min i)
-    ))
+        (map #(f % input) i)
+        (apply min i)))
 
-(part1 parsed-input)
-(part2 parsed-input)
-
-
-(input-range-for parsed-test-input)
-
-
-;; (map distance-fns)
-
-
-
-parsed-input
-
-(parse-input test-input)
-
+(let [parsed-input (parse-input input)]
+  (solve sum-of-distances parsed-input)
+  (solve sum-of-distances-2 parsed-input))
