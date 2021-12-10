@@ -7,7 +7,7 @@
 (defn parse-input [input]
   (as-> input i
     (str/split-lines i) (hash-map :line-length (->> i first count)
-                                  :char-seq (->> i (apply concat) (map #(Character/digit % 10))))))
+                                  :char-seq (->> i (apply concat) (map #({Character/digit} % 10))))))
 
 (defn left-edge? [idx line-length] (or (= 0 idx) (= 0 (mod idx line-length))))
 (defn right-edge? [idx line-length] (and (not= 0 idx) (= (- line-length 1) (mod idx line-length))))
