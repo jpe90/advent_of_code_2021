@@ -29,56 +29,95 @@
 ;; if line has a comma, add to points
 ;; if it has an equal, add to instructions
 (def test (parse-input test-input))
-(def real (parse-input (data/input 2021 7)))
-(:points test)
+(def real (parse-input (data/input 2021 13)))
+
                                         ;
-(defn update-y-point [y ymax] (if (> y ymax) (- y ymax) y))
-(update-y-point 4 3)
-
 ;; not intuitive what's going on here 
+(defn update-x-pts [oldmax newmax]
+  (fn [current] (distinct (map #(hash-map :x (if (> (:x %) newmax)
+                                               (- oldmax (:x %))
+                                               (:x %))
+                                          :y (:y %)) current))))
+
 (defn update-y-pts [oldmax newmax]
-  (fn [current] (map #(hash-map :x (:x %)
-                   :y (if (> (:y %) newmax)
-                         (- oldmax (:y %))
-                        (:y %))) current)))
+  (fn [current] (distinct (map #(hash-map :x (:x %)
+                                          :y (if (> (:y %) newmax)
+                                               (- oldmax (:y %))
+                                               (:y %))) current))))
 
-(defn fold-y [pts-info]
-  (let [newmax (quot (:ymax pts-info) 2)] (as-> test i
-       (assoc i :ymax newmax)
-       ;((fn [current] (update current :points (fn [pts] (map
-       ;                                                   #(if (> (:y %) (:ymax current))
-       ;                                                      {:x (:x %) :y (- (:y %) (:ymax current))}
-                                        ;                                                      99)) pts))))
-       ;; trying to update a seq nested in a hashmap by mapping over it with a value
-        (update i :points (update-y-pts (:ymax pts-info) newmax))
-        )))
-inc
+(defn fold-y [pts-info fy]
+  (as-> pts-info i
+    (assoc i :ymax fy)
+    (update i :points (update-y-pts (:ymax pts-info) fy))
+    (update i :instructions rest)
+    ))
 
-;(map #(hash-map :x (:x %) :y (if (> 2 (:y %)) 42 (:y %))) '({:x 6, :y 10}
-;            {:x 0, :y 14}
-;            {:x 9, :y 10}
-;            {:x 0, :y 3}
-;            {:x 10, :y 4}
-;            {:x 4, :y 11}
-;            {:x 6, :y 0}
-;            {:x 6, :y 12}
-;            {:x 4, :y 1}
-;            {:x 0, :y 13}
-;            {:x 10, :y 12}
-;            {:x 3, :y 4}
-;            {:x 3, :y 0}
-;            {:x 8, :y 4}
-;            {:x 1, :y 10}
-;            {:x 2, :y 14}
-;            {:x 8, :y 10}
-;            {:x 9, :y 0}))
-(fold-y test)
-;(defn fold [points ins]
-;  (if (some? (:x ins)) :x :y)
-;
-;  )
-;
-;(fold "e" {:x "b"})
+(defn fold-x [pts-info fx]
+  (as-> pts-info i
+    (assoc i :xmax fx)
+    (update i :points (update-x-pts (:xmax pts-info) fx))
+    (update i :instructions rest)
+    ))
+
+
+                                        ;(map #(hash-map :x (:x %) :y (if (> 2 (:y %)) 42 (:y %))) '({:x 6, :y 10}
+                                        ;            {:x 0, :y 14}
+                                        ;            {:x 9, :y 10}
+                                        ;            {:x 0, :y 3}
+                                        ;            {:x 10, :y 4}
+                                        ;            {:x 4, :y 11}
+                                        ;            {:x 6, :y 0}
+                                        ;            {:x 6, :y 12}
+                                        ;            {:x 4, :y 1}
+                                        ;            {:x 0, :y 13}
+                                        ;            {:x 10, :y 12}
+                                        ;            {:x 3, :y 4}
+                                        ;            {:x 3, :y 0}
+                                        ;            {:x 8, :y 4}
+                                        ;            {:x 1, :y 10}
+                                        ;            {:x 2, :y 14}
+                                        ;            {:x 8, :y 10}
+                                        ;            {:x 9, :y 0}))
+(count (:points (fold-y test 7)))
+;; (count (:points (fold-x real 655)))
+
+(defn looper [in]
+  (loop [x in]
+    (let [ins (first (:instructions x))]
+      (cond
+        (some? (:x ins)) (recur (fold-x x (:x ins)))
+        (some? (:y ins)) (recur (fold-y x (:y ins)))
+        :else x))))
+
+;; (defn looper [in]
+;;   (loop [x in]
+;;     (let [ins (first (:instructions x))]
+;;       (cond
+;;         (some? (:x ins)) (recur (fold-x x (:x ins)))
+;;         (some? (:y ins)) (recur (fold-y x (:y ins)))
+;;         :else x))))
+
+(defn mcontains? [coll val] (some #(= val %) coll))
+(defn prn [in]
+  (for [y (range (+ 1 (:ymax in)))]
+    (for [x (range (+ 1 (:xmax in)))]
+      (let [prnval (if (mcontains?  (:points in) {:x x :y y}) "   " "  #")]
+        (if (= x (:xmax in))
+          (print (str prnval "\n"))
+          (print prnval))))
+    ))
+
+(prn (looper test))
+(prn (looper real))
+
+
+
+                                        ;(defn fold [points ins]
+                                        ;  (if (some? (:x ins)) :x :y)
+                                        ;
+                                        ;  )
+                                        ;
+                                        ;(fold "e" {:x "b"})
 
 
 
