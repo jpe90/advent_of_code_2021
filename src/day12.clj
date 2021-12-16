@@ -3,8 +3,6 @@
             [clojure.string :as str]
             [clojure.pprint :refer [cl-format]]))
 
-(def test-input (slurp "src/12_2.txt"))
-
 (defn input->graph [input]
   (->> input 
         str/split-lines 
@@ -20,50 +18,43 @@
 (defn mcontains? [coll val] (some #(= val %) coll))
 
 (defn dfs
-  "Depth first search to find all paths to a goal"
-  [graph goal]
-  (fn search
-    [path visited]
-    (let [current (peek path)]
-      (if (= goal current)
-        [path]
-        (->> current graph
-             (remove visited)
-             (mapcat #(search (conj path %) (if (keyword-lower? %) (conj visited %) visited))))))))
+  ([graph start goal]
+   (let [visited-nodes #{start}]
+     ((dfs graph goal) [start] visited-nodes)))
+  ([graph goal]
+   (fn search
+     [path visited]
+     (let [current (peek path)]
+       (if (= goal current)
+         [path]
+         (->> current graph
+              (remove visited)
+              (mapcat #(search (conj path %) (if (keyword-lower? %) (conj visited %) visited)))))))))
 
 (defn dfs2
-  "Depth first search to find all paths to a goal"
-  [graph goal]
-  (fn search
-    [path visited dupe-detected]
-    (let [current (peek path)
-          to-remove (if dupe-detected visited #{:start})]
-      (if (= goal current)
-        [path]
-        (->> current graph
-             (remove to-remove)
+  ([graph start goal]
+   (let [visited-nodes #{start}]
+     ((dfs2 graph goal) [start] visited-nodes false)))
+  ([graph goal]
+   (fn search
+     [path visited dupe-detected]
+     (let [current (peek path)
+           to-remove (if dupe-detected visited #{:start})]
+       (if (= goal current)
+         [path]
+         (->> current graph
+              (remove to-remove)
               (mapcat #(search (conj path %)
-                              (if (keyword-lower? %) (conj visited %) visited)
-                              (if (or
-                                    dupe-detected
-                                    (and
-                                     (keyword-lower? %)
-                                     (mcontains? visited %)))
-                                true
-                                false))))))))
+                               (if (keyword-lower? %) (conj visited %) visited)
+                               (if (or
+                                     dupe-detected
+                                     (and
+                                       (keyword-lower? %)
+                                       (mcontains? visited %)))
+                                 true
+                                 false)))))))))
 
-(defn find-paths2
-  "Find all paths in a directed graph"
-  [graph start goal]
-  (let [visited-nodes #{start}]
-    ((dfs2 graph goal) [start] visited-nodes false)))
-
-(defn find-paths
-  "Find all paths in a directed graph"
-  [graph start goal]
-  (let [visited-nodes #{start}]
-    ((dfs graph goal) [start] visited-nodes)))
 
 (let [parsed-input (-> (data/input 2021 12) input->graph)]
-  (cl-format true "Part 1: ~d~%" (count (find-paths parsed-input :start :end)))
-  (cl-format true "Part 2: ~d~%" (count (find-paths2 parsed-input :start :end))))
+  (cl-format true "Part 1: ~d~%" (count (dfs parsed-input :start :end)))
+  (cl-format true "Part 2: ~d~%" (count (dfs2 parsed-input :start :end))))
