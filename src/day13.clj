@@ -89,26 +89,27 @@
         (some? (:y ins)) (recur (fold-y x (:y ins)))
         :else x))))
 
-;; (defn looper [in]
-;;   (loop [x in]
-;;     (let [ins (first (:instructions x))]
-;;       (cond
-;;         (some? (:x ins)) (recur (fold-x x (:x ins)))
-;;         (some? (:y ins)) (recur (fold-y x (:y ins)))
-;;         :else x))))
+(defn looper [in]
+  (loop [x in]
+    (let [ins (first (:instructions x))]
+      (cond
+        (some? (:x ins)) (recur (fold-x x (:x ins)))
+        (some? (:y ins)) (recur (fold-y x (:y ins)))
+        :else x))))
 
 (defn mcontains? [coll val] (some #(= val %) coll))
 (defn prn [in]
-  (for [y (range (+ 1 (:ymax in)))]
-    (for [x (range (+ 1 (:xmax in)))]
-      (let [prnval (if (mcontains?  (:points in) {:x x :y y}) "   " "  #")]
-        (if (= x (:xmax in))
+  (for [y (range (:ymax in))]
+    (for [x (range (:xmax in))]
+      (let [prnval (if (mcontains?  (:points in) {:x x :y y}) "#" ".")]
+        (if (= x (- (:xmax in) 1))
           (print (str prnval "\n"))
           (print prnval))))
     ))
+(mcontains?  (:points test) {:x 6 :y 10})
+(prn (looper real))
 
 (prn (looper test))
-(prn (looper real))
 
 
 
